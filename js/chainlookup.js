@@ -8,7 +8,8 @@ class ChainLookup
     constructor()
     {
         chrome.runtime.sendMessage({ func: "rpc_provider" }, (objResponse) => {
-            this.web3 = new Web3(new Web3.providers.HttpProvider(objResponse.resp)); 
+            chrome.runtime.lastError;
+            this.web3 = new Web3(new Web3.providers.HttpProvider(objResponse.resp));
             this.setupFormSubmitHandler();
         });
     }
@@ -23,6 +24,7 @@ class ChainLookup
                 event.preventDefault();
 
                 chrome.runtime.sendMessage({ func: "blockchain_explorer" }, async function(objResponse) {
+                    chrome.runtime.lastError;
                     this.strBlockExplorer = objResponse.resp;
 
                     const strInput = document.querySelector(FORM_CHAIN_LOOKUP_INPUT_SELECTOR).value;
@@ -45,6 +47,7 @@ class ChainLookup
             `
 
             chrome.runtime.sendMessage({ func: "rpc_details" }, (objResponse) => {
+                chrome.runtime.lastError;
                 let objDetails = JSON.parse(objResponse.resp);
 
                 document.querySelector(FORM_CHAIN_LOOKUP_DETAILS_SELECTOR).innerHTML += `
