@@ -17,7 +17,7 @@ async function toggleMatchHighlight()
 
 async function refreshHighlightOption()
 {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     var intShowHighlight = await LS.getItem("ext-etheraddresslookup-show_style");
 
     document.querySelector(HIGHLIGHT_CHECKBOX_SELECTOR).checked = (intShowHighlight == 1 ? true : false);

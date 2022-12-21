@@ -17,7 +17,7 @@ async function toggleTwitterValidation()
 
 async function refreshTwittertOption()
 {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     var intTwitterValidation;
     const twitterValidation = await LS.getItem("ext-etheraddresslookup-twitter_validation");
     if(!twitterValidation) {

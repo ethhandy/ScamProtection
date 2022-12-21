@@ -1,4 +1,4 @@
-var objBrowser = chrome ? chrome : browser;
+var objBrowser = chrome || browser;
 
 const ETH_NETWORK_MAP = [
     {

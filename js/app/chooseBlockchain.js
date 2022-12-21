@@ -31,7 +31,7 @@ async function toggleBlockchainExplorer() {
 
     // See if the node is on a different network
     let intNetworkId = objBlockchainExplorer.options[objBlockchainExplorer.selectedIndex].dataset.network;
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
 
     chrome.runtime.sendMessage({ func: "rpc_provider" }, (objResponse) => {
         chrome.runtime.lastError;
@@ -70,7 +70,7 @@ async function refreshBlockchainExplorer() {
 
     //Notify the tab to do a class method
     var strMethod = "changeBlockchainExplorer";
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     objBrowser.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.runtime.lastError;
         objBrowser.tabs.sendMessage(tabs[0].id, {

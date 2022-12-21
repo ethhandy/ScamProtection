@@ -1,5 +1,5 @@
 (function() {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
 
     let strInitHref = window.location.href;
 
@@ -26,7 +26,7 @@
 
     //Detects if the current tab is in the blacklisted domains file
     function blacklistedDomainCheck() {
-        var objBrowser = chrome ? chrome : browser;
+        var objBrowser = chrome || browser;
         var arrBlacklistedDomains = [];
         var arrWhitelistedDomains = ["www.myetherwallet.com", "myetherwallet.com"];
         objBrowser.runtime.sendMessage({func: "blacklist_whitelist_domain_list"}, function (objResponse) {

@@ -1,4 +1,15 @@
-var objBrowser = chrome ? chrome : browser;
+var objBrowser = chrome || browser;
+
+var LS = {
+    getItem: key => {
+        return new Promise(resolve => {
+            resolve((objBrowser.storage.local.get(key))[key])
+        })
+    },
+    setItem: (key, val) => objBrowser.storage.local.set({[key]: val}),
+};
+
+const DATA_UPDATE_PERIOD = 3;
 
 (async function() {
     //Toggle the highlight option and set it in LocalStorage
@@ -48,7 +59,7 @@ var objBrowser = chrome ? chrome : browser;
     var objNetworkDetails = document.querySelector("#ext-etheraddresslookup-rpc_node_details > span");
     if(objNetworkDetails) {
         let objNetworkDetails;
-        const rpcNodeDetails = await chrome.storage.local.get("ext-etheraddresslookup-rpc_node_details")["ext-etheraddresslookup-rpc_node_details"];
+        const rpcNodeDetails = await objBrowser.storage.local.get("ext-etheraddresslookup-rpc_node_details")["ext-etheraddresslookup-rpc_node_details"];
         if(!rpcNodeDetails) {
             objNetworkDetails = {
                 "network_id": 1,
@@ -64,24 +75,22 @@ var objBrowser = chrome ? chrome : browser;
 
     //init getting blacklisted domains
     getBlacklistedDomains();
-    setInterval(function() {
-        console.log("Re-caching blacklisted domains");
-        getBlacklistedDomains();
-    }, 180000);
-
     getWhitelistedDomains();
-    setInterval(function() {
-        console.log("Re-caching whitelisted domains");
-        getWhitelistedDomains();
-    }, 180000);
+
+    objBrowser.alarms.create("DomainListUpdate", {
+        periodInMinutes: DATA_UPDATE_PERIOD
+    });
 })();
+
+objBrowser.alarms.onAlarm.addListener(function(alarm) {
+    if (alarm.name !== "DomainListUpdate")
+        return;
+    getBlacklistedDomains();
+    getWhitelistedDomains();
+});
 
 async function getBlacklistedDomains(strType)
 {
-    var LS = {
-        getItem: async key => (await chrome.storage.local.get(key))[key],
-        setItem: (key, val) => chrome.storage.local.set({[key]: val}),
-    };
     var objEalBlacklistedDomains = {
         "eal": {
             "timestamp": 0,
@@ -140,64 +149,49 @@ async function getBlacklistedDomains(strType)
 
 async function updateAllBlacklists(objEalBlacklistedDomains)
 {
-    var LS = {
-        getItem: async key => (await chrome.storage.local.get(key))[key],
-        setItem: (key, val) => chrome.storage.local.set({[key]: val}),
-    };
-    getBlacklistedDomainsFromSource(objEalBlacklistedDomains.eal).then(async function (arrDomains) {
-        objEalBlacklistedDomains.eal.timestamp = Math.floor(Date.now() / 1000);
-        objEalBlacklistedDomains.eal.domains = arrDomains.filter((v,i,a)=>a.indexOf(v)==i);
+    let arrDomains_1 = await getBlacklistedDomainsFromSource(objEalBlacklistedDomains.eal);
+    objEalBlacklistedDomains.eal.timestamp = Math.floor(Date.now() / 1000);
+    objEalBlacklistedDomains.eal.domains = arrDomains_1.filter((v,i,a)=>a.indexOf(v)==i); 
+    await LS.setItem("ext-etheraddresslookup-blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.eal));
 
-        await LS.setItem("ext-etheraddresslookup-blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.eal));
-    });
+    let arrDomains_2 = await getBlacklistedDomainsFromSource(objEalBlacklistedDomains.uri)
+    objEalBlacklistedDomains.uri.timestamp = Math.floor(Date.now() / 1000);
+    objEalBlacklistedDomains.uri.domains = arrDomains_2.filter((v,i,a)=>a.indexOf(v)==i);
 
-    getBlacklistedDomainsFromSource(objEalBlacklistedDomains.uri).then(async function (arrDomains) {
-        objEalBlacklistedDomains.uri.timestamp = Math.floor(Date.now() / 1000);
-        objEalBlacklistedDomains.uri.domains = arrDomains.filter((v,i,a)=>a.indexOf(v)==i);
-
-        await LS.setItem("ext-etheraddresslookup-uri_blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.uri));
-    });
+    await LS.setItem("ext-etheraddresslookup-uri_blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.uri));
 
     if( [null, undefined, 1].indexOf(await LS.getItem("ext-etheraddresslookup-use_3rd_party_blacklist")) >= 0) {
-        getBlacklistedDomainsFromSource(objEalBlacklistedDomains.third_party.phishfort).then(async function (arrDomains) {
+        let phishDomains = await getBlacklistedDomainsFromSource(objEalBlacklistedDomains.third_party.phishfort)
 
-            let arrPhishFortBlacklist = [];
-            // De-dupe from the main EAL source - save on space.
-            let objEalBlacklist = await LS.getItem("ext-etheraddresslookup-blacklist_domains_list");
-            if(objEalBlacklist) {
-                objEalBlacklist = JSON.parse(objEalBlacklist);
-                let arrEalBlacklist = objEalBlacklist.domains;
-                var intBlacklistLength = arrDomains.length;
-                while(intBlacklistLength--) {
-                    if(arrEalBlacklist.indexOf(arrDomains[intBlacklistLength]) < 0) {
-                        arrPhishFortBlacklist.push(arrDomains[intBlacklistLength])
-                    }
+        let arrPhishFortBlacklist = [];
+        // De-dupe from the main EAL source - save on space.
+        let objEalBlacklist = await LS.getItem("ext-etheraddresslookup-blacklist_domains_list");
+        if(objEalBlacklist) {
+            objEalBlacklist = JSON.parse(objEalBlacklist);
+            let arrEalBlacklist = objEalBlacklist.domains;
+            var intBlacklistLength = phishDomains.length;
+            while(intBlacklistLength--) {
+                if(arrEalBlacklist.indexOf(phishDomains[intBlacklistLength]) < 0) {
+                    arrPhishFortBlacklist.push(phishDomains[intBlacklistLength])
                 }
             }
+        }
 
-            objEalBlacklistedDomains.third_party.phishfort.timestamp = Math.floor(Date.now() / 1000);
-            objEalBlacklistedDomains.third_party.phishfort.domains = arrPhishFortBlacklist;
+        objEalBlacklistedDomains.third_party.phishfort.timestamp = Math.floor(Date.now() / 1000);
+        objEalBlacklistedDomains.third_party.phishfort.domains = arrPhishFortBlacklist;
 
-            await LS.setItem("ext-etheraddresslookup-3p_blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.third_party));
-            return objEalBlacklistedDomains.eal.domains;
-        });
+        await LS.setItem("ext-etheraddresslookup-3p_blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.third_party));
 
-        getBlacklistedDomainsFromSource(objEalBlacklistedDomains.third_party.segasec).then(async function (arrDomains) {
-            objEalBlacklistedDomains.third_party.segasec.timestamp = Math.floor(Date.now() / 1000);
-            objEalBlacklistedDomains.third_party.segasec.domains = arrDomains.filter((v,i,a)=>a.indexOf(v)==i);
+        let thridPartyDomains = await getBlacklistedDomainsFromSource(objEalBlacklistedDomains.third_party.segasec);
+        objEalBlacklistedDomains.third_party.segasec.timestamp = Math.floor(Date.now() / 1000);
+        objEalBlacklistedDomains.third_party.segasec.domains = thridPartyDomains.filter((v,i,a)=>a.indexOf(v)==i);
 
-            await LS.setItem("ext-etheraddresslookup-3p_blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.third_party));
-            return objEalBlacklistedDomains.eal.domains;
-        });
+        await LS.setItem("ext-etheraddresslookup-3p_blacklist_domains_list", JSON.stringify(objEalBlacklistedDomains.third_party));
     }
 }
 
 async function getWhitelistedDomains()
 {
-    var LS = {
-        getItem: async key => (await chrome.storage.local.get(key))[key],
-        setItem: (key, val) => chrome.storage.local.set({[key]: val}),
-    };
     let objWhitelistedDomains = {"timestamp":0,"domains":[]};
     //See if we need to get the blacklisted domains - ie: do we have them cached?
     const whiteListDomainsList = await LS.getItem("ext-etheraddresslookup-whitelist_domains_list");
