@@ -14,7 +14,8 @@
 
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "alarms"
   ],
 
   "optional_permissions": [

@@ -32,7 +32,7 @@ var LS = {
 };
 
 async function doHistoryInspection() {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     objBrowser.history.search({text: "", maxResults: 500}, async function (objHistoryItems) {
         var blRedirected = false;
         var intTotalWarnings = 0;
@@ -94,7 +94,7 @@ function exitNoPermission()
 
 function removePermission()
 {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     objBrowser.permissions.remove({
         permissions: ['history']
     }, function(removed) {

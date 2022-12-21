@@ -1,5 +1,5 @@
 (function() {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     //See if they have the signature injection enabled
     objBrowser.runtime.sendMessage({func: "signature_inject"}, function(objResponse) {
         chrome.runtime.lastError;

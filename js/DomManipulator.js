@@ -1,4 +1,4 @@
-var objBrowser = chrome ? chrome : browser;
+var objBrowser = chrome || browser;
 
 const EXT_PREFIX = 'ext-etheraddresslookup';
 const HOVER_POPUP_CLASS_NAME = `${EXT_PREFIX}-address_stats_hover`;
@@ -37,7 +37,6 @@ class EtherAddressLookup {
      */
     init()
     {
-        var objBrowser = chrome ? chrome : browser;
         //Get the highlight option for the user
         objBrowser.runtime.sendMessage({func: "highlight_option"}, function(objResponse) {
             chrome.runtime.lastError;

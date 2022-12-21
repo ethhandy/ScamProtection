@@ -45,7 +45,7 @@ async function toggleBlockPunycodeDomains()
 
 async function refreshBlacklistDomains()
 {
-    var objBrowser = chrome ? chrome : browser;
+    var objBrowser = chrome || browser;
     objBrowser.runtime.sendMessage({func: "blacklist_domain_list"}, function(objResponse) {
         chrome.runtime.lastError;
         console.log("BDL-001 - Fetched blacklisted domains");
@@ -78,28 +78,27 @@ async function refreshBlacklistDomains()
 
 async function getBlacklistStats()
 {
-    try {
-        var objLastUpdatedText = document.getElementById("ext-etheraddresslookup-blacklist_domains_last_updated");
-        var objTotalCountText = document.getElementById("ext-etheraddresslookup-blacklist_domains_total_count");
-        let objBlacklistedDomains = await LS.getItem("ext-etheraddresslookup-blacklist_domains_list");
-        objBlacklistedDomains = JSON.parse(objBlacklistedDomains);
-        var intLastUpdated = objBlacklistedDomains.timestamp;
+    var objLastUpdatedText = document.getElementById("ext-etheraddresslookup-blacklist_domains_last_updated");
+    var objTotalCountText = document.getElementById("ext-etheraddresslookup-blacklist_domains_total_count");
+    let objBlacklistedDomains = Object.values(await chrome.storage.local.get(["ext-etheraddresslookup-blacklist_domains_list"]))[0];
+    if (!objBlacklistedDomains) return;
+    objBlacklistedDomains = JSON.parse(objBlacklistedDomains);
+    var intLastUpdated = objBlacklistedDomains.timestamp;
 
-        objLastUpdatedText.innerText = timeDifference(Math.floor(Date.now()/1000), intLastUpdated);
-        objTotalCountText.innerText = new Intl.NumberFormat().format(objBlacklistedDomains.domains.length);
+    objLastUpdatedText.innerText = timeDifference(Math.floor(Date.now()/1000), intLastUpdated);
+    objTotalCountText.innerText = new Intl.NumberFormat().format(objBlacklistedDomains.domains.length);
 
-        //Now get the 3p blacklist stats
-        var objTotal3pCountText = document.getElementById("ext-etheraddresslookup-3p_blacklist_domains_total_count");
-        objBlacklistedDomains = await LS.getItem("ext-etheraddresslookup-3p_blacklist_domains_list");
-        objBlacklistedDomains = JSON.parse(objBlacklistedDomains);
-        var intTotalBlacklisted = 0;
-        for(var str3pName in objBlacklistedDomains) {
-            intTotalBlacklisted += objBlacklistedDomains[str3pName].domains.length;
-        }
-        objTotal3pCountText.innerText = "+" + new Intl.NumberFormat().format(intTotalBlacklisted);
-    } catch (e) {
-        console.log(e);
+    //Now get the 3p blacklist stats
+    var objTotal3pCountText = document.getElementById("ext-etheraddresslookup-3p_blacklist_domains_total_count");
+
+    objBlacklistedDomains = Object.values(await chrome.storage.local.get(["ext-etheraddresslookup-3p_blacklist_domains_list"]))[0];
+    if (!objBlacklistedDomains) return;
+    objBlacklistedDomains = JSON.parse(objBlacklistedDomains);
+    var intTotalBlacklisted = 0;
+    for(var str3pName in objBlacklistedDomains) {
+        intTotalBlacklisted += objBlacklistedDomains[str3pName].domains.length;
     }
+    objTotal3pCountText.innerText = "+" + new Intl.NumberFormat().format(intTotalBlacklisted);
 }
 
 function timeDifference(current, previous)
