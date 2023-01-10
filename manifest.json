@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
 
-  "name": "Updated",
+  "name": "EtherAddressLookup",
   "short_name": "EtherAddressLookup",
   "description": "Adds links to strings that look like Ethereum addresses to your favorite blockchain explorer + antiphishing measures.",
   "version": "1.3",

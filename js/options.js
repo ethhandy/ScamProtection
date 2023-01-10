@@ -77,17 +77,21 @@ const DATA_UPDATE_PERIOD = 3;
     getBlacklistedDomains();
     getWhitelistedDomains();
 
-    objBrowser.alarms.create("DomainListUpdate", {
-        periodInMinutes: DATA_UPDATE_PERIOD
-    });
+    if (objBrowser.alarms) {
+        objBrowser.alarms.create("DomainListUpdate", {
+            periodInMinutes: DATA_UPDATE_PERIOD
+        });
+    }
 })();
 
-objBrowser.alarms.onAlarm.addListener(function(alarm) {
-    if (alarm.name !== "DomainListUpdate")
-        return;
-    getBlacklistedDomains();
-    getWhitelistedDomains();
-});
+if (objBrowser.alarms) {
+    objBrowser.alarms.onAlarm.addListener(function(alarm) {
+        if (alarm.name !== "DomainListUpdate")
+            return;
+        getBlacklistedDomains();
+        getWhitelistedDomains();
+    });
+}
 
 async function getBlacklistedDomains(strType)
 {
