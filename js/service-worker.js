@@ -250,7 +250,7 @@ function onMessage(request, sender) {
                 switch(request.icon) {
                     case 'whitelisted' :
                         chrome.action.setIcon({
-                            path: "images/ether-128x128-green_badge.png",
+                            path: "./../images/ether-128x128-green_badge.png",
                             tabId: sender.tab.id
                         });
     
@@ -260,7 +260,7 @@ function onMessage(request, sender) {
                     break;
                     case 'blacklisted' :
                         chrome.action.setIcon({
-                            path: "images/ether-128x128-red_badge.png",
+                            path: "./../images/ether-128x128-red_badge.png",
                             tabId: sender.tab.id
                         });
     
@@ -271,7 +271,7 @@ function onMessage(request, sender) {
                     case 'neutral' :
                     default :
                         chrome.action.setIcon({
-                            path: "images/ether-128x128.png",
+                            path: "./../images/ether-128x128.png",
                             tabId: sender.tab.id
                         });
     

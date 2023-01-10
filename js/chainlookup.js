@@ -104,45 +104,71 @@ class ChainLookup
 
     async doAddressLookup(strInput)
     {
-        let strAddressBlockie = blockies.create({
-            seed: strInput.toLowerCase(),
-            size: 8,
-            scale: 16
-        }).toDataURL();
+        let response = await fetch(`https://api.cryptoscamdb.org/v1/check/${strInput}`);
+        response = await response.json();
 
-        let objAddressDetails = {
-            "eth": 0,
-            "tx": 0,
-            "contract": false
-        };
+        if (response.success) { // 4 Scam Address
+            const {
+                status, coin, entries
+            } = response.result;
+            const { 
+                name, type, url, hostname, category, description, reporter
+            }= entries[0];
 
-        objAddressDetails.eth = this.web3.fromWei(
-            this.web3.eth.getBalance(strInput).toString(10), "ether"
-        ).toLocaleString("en-US", {maximumSignificantDigits: 5});
-
-        objAddressDetails.tx = parseInt(this.web3.eth.getTransactionCount(strInput)).toLocaleString();
-        objAddressDetails.contract = this.web3.eth.getCode(strInput) === "0x" ? "Normal (EOA)": "Contract";
-
-        let strAddressLookedup = strInput;
-        let objLabels = new Labels();
-        let objLabelledAddress = await objLabels.getLabelForAddress(strAddressLookedup);
-        if(typeof objLabelledAddress !== "undefined") {
-            let strLabel = `${objLabelledAddress.label} (${ChainLookup.getShortAddress(strAddressLookedup)})`;
-            strAddressLookedup = objLabels.getTemplate(strLabel, objLabelledAddress.color);
-        }
-
-        document.querySelector(FORM_CHAIN_LOOKUP_OUTPUT_SELECTOR).innerHTML = `
-                <strong>Address:</strong> <br />
-                    <span>
-                        <img class="blockie" src="${strAddressBlockie}" />
-                        <a target="_blank" href="${this.strBlockExplorer +"/"+ strInput}">${strAddressLookedup}</a>
-                    </span> <br />
+            document.querySelector(FORM_CHAIN_LOOKUP_OUTPUT_SELECTOR).innerHTML = `
                     <ul>
-                        <li><strong>ETH:</strong> ${objAddressDetails.eth}</li>
-                        <li><strong>Transactions out:</strong> ${objAddressDetails.tx}</li>
-                        <li><strong>Type:</strong> ${objAddressDetails.contract}</li>
+                        <li><strong>Status:</strong> ${status}</li>
+                        <li><strong>Coin:</strong> ${coin}</li>
+                        <li><strong>Name:</strong> ${name}</li>
+                        <li><strong>Type:</strong> ${type}</li>
+                        <li><strong>Url:</strong> ${url}</li>
+                        <li><strong>Hostname:</strong> ${hostname}</li>
+                        <li><strong>Category:</strong> ${category}</li>
+                        <li><strong>Description:</strong> ${description}</li>
+                        <li><strong>Reporter:</strong> ${reporter}</li>
                     </ul>
-            `;
+                `;
+        } else {
+            let strAddressBlockie = blockies.create({
+                seed: strInput.toLowerCase(),
+                size: 8,
+                scale: 16
+            }).toDataURL();
+    
+            let objAddressDetails = {
+                "eth": 0,
+                "tx": 0,
+                "contract": false
+            };
+    
+            objAddressDetails.eth = this.web3.fromWei(
+                this.web3.eth.getBalance(strInput).toString(10), "ether"
+            ).toLocaleString("en-US", {maximumSignificantDigits: 5});
+    
+            objAddressDetails.tx = parseInt(this.web3.eth.getTransactionCount(strInput)).toLocaleString();
+            objAddressDetails.contract = this.web3.eth.getCode(strInput) === "0x" ? "Normal (EOA)": "Contract";
+    
+            let strAddressLookedup = strInput;
+            let objLabels = new Labels();
+            let objLabelledAddress = await objLabels.getLabelForAddress(strAddressLookedup);
+            if(typeof objLabelledAddress !== "undefined") {
+                let strLabel = `${objLabelledAddress.label} (${ChainLookup.getShortAddress(strAddressLookedup)})`;
+                strAddressLookedup = objLabels.getTemplate(strLabel, objLabelledAddress.color);
+            }
+    
+            document.querySelector(FORM_CHAIN_LOOKUP_OUTPUT_SELECTOR).innerHTML = `
+                    <strong>Address:</strong> <br />
+                        <span>
+                            <img class="blockie" src="${strAddressBlockie}" />
+                            <a target="_blank" href="${this.strBlockExplorer +"/"+ strInput}">${strAddressLookedup}</a>
+                        </span> <br />
+                        <ul>
+                            <li><strong>ETH:</strong> ${objAddressDetails.eth}</li>
+                            <li><strong>Transactions out:</strong> ${objAddressDetails.tx}</li>
+                            <li><strong>Type:</strong> ${objAddressDetails.contract}</li>
+                        </ul>
+                `;
+        }
     }
 
     async doTxLookup(strInput)
